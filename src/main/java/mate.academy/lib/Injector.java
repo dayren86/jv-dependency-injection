@@ -13,15 +13,13 @@ import mate.academy.service.impl.ProductParserImpl;
 import mate.academy.service.impl.ProductServiceImpl;
 
 public class Injector {
-    private static final Map<Class<?>, Class<?>> INTERFACE_IMPL = new HashMap<>();
+    private static final Map<Class<?>, Class<?>> INTERFACE_IMPL = Map.of(
+            FileReaderService.class, FileReaderServiceImpl.class,
+            ProductParser.class, ProductParserImpl.class,
+            ProductService.class, ProductServiceImpl.class
+    );
     private static final Map<Class<?>, Object> INSTANCES = new HashMap<>();
     private static final Injector INJECTOR = new Injector();
-
-    public Injector() {
-        INTERFACE_IMPL.put(FileReaderService.class, FileReaderServiceImpl.class);
-        INTERFACE_IMPL.put(ProductParser.class, ProductParserImpl.class);
-        INTERFACE_IMPL.put(ProductService.class, ProductServiceImpl.class);
-    }
 
     public static Injector getInjector() {
         return INJECTOR;
@@ -29,8 +27,12 @@ public class Injector {
 
     public Object getInstance(Class<?> interfaceClazz) {
         Object clazzImplInstance = null;
+
         Class<?> clazz = findImplementation(interfaceClazz);
+
         Field[] declaredFields = clazz.getDeclaredFields();
+
+
         for (Field declaredField : declaredFields) {
             if (declaredField.isAnnotationPresent(Inject.class)) {
                 Object fieldInstance = getInstance(declaredField.getType());
@@ -41,7 +43,8 @@ public class Injector {
                     declaredField.set(clazzImplInstance, fieldInstance);
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException("Can`t initialize field: "
-                            + "Class: " + clazz.getName() + " Filed: " + declaredField.getName());
+                            + "Class: " + clazz.getName() + " Filed: " + declaredField.getName()
+                            + " " + e);
                 }
             }
         }
@@ -61,19 +64,22 @@ public class Injector {
             Object instance = constructors.newInstance();
             INSTANCES.put(clazz, instance);
             return instance;
-        } catch (NoSuchMethodException | InvocationTargetException
-                 | InstantiationException | IllegalAccessException e) {
+        } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
 
     private Class<?> findImplementation(Class<?> interfaceClazz) {
-        if (!interfaceClazz.isAnnotationPresent(Component.class)) {
-            throw new RuntimeException("Unsupported class " + interfaceClazz.getName());
+        if (interfaceClazz == null) {
+            throw new RuntimeException("Class is null");
         }
 
-        return interfaceClazz.isInterface()
-                ? INTERFACE_IMPL.get(interfaceClazz) :
-                interfaceClazz;
+        Class<?> clazz = interfaceClazz.isInterface() ? INTERFACE_IMPL.get(interfaceClazz) : interfaceClazz;
+
+        if (!clazz.isAnnotationPresent(Component.class)) {
+            throw new RuntimeException("Unsupported class " + clazz.getName());
+        }
+
+        return clazz;
     }
 }
