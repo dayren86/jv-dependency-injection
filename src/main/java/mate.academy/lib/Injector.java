@@ -2,7 +2,6 @@ package mate.academy.lib;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import mate.academy.service.FileReaderService;
@@ -31,7 +30,6 @@ public class Injector {
         Class<?> clazz = findImplementation(interfaceClazz);
 
         Field[] declaredFields = clazz.getDeclaredFields();
-
 
         for (Field declaredField : declaredFields) {
             if (declaredField.isAnnotationPresent(Inject.class)) {
@@ -74,7 +72,8 @@ public class Injector {
             throw new RuntimeException("Class is null");
         }
 
-        Class<?> clazz = interfaceClazz.isInterface() ? INTERFACE_IMPL.get(interfaceClazz) : interfaceClazz;
+        Class<?> clazz = interfaceClazz.isInterface()
+                ? INTERFACE_IMPL.get(interfaceClazz) : interfaceClazz;
 
         if (!clazz.isAnnotationPresent(Component.class)) {
             throw new RuntimeException("Unsupported class " + clazz.getName());
